@@ -10,8 +10,6 @@ param dnsZoneId string
 @secure()
 param litellmMasterKey string
 @secure()
-param azureAiApiKey string
-@secure()
 param databaseUrl string
 
 resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
@@ -34,11 +32,6 @@ resource sMaster 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: kv
   name: 'litellm-master-key'
   properties: { value: litellmMasterKey }
-}
-resource sAiKey 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: kv
-  name: 'azure-ai-api-key'
-  properties: { value: azureAiApiKey }
 }
 resource sDbUrl 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: kv

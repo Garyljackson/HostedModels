@@ -12,9 +12,9 @@ model_list:
   - model_name: gpt-class
     litellm_params:
       model: azure/gpt-class                 # AOAI deployment name (model gpt-5.4)
-      api_base: https://<ai-services-name>.openai.azure.com
-      api_key: os.environ/AZURE_API_KEY
+      api_base: os.environ/AZURE_API_BASE    # injected from the AI Services endpoint
       api_version: "2024-10-21"              # confirm current
+      # No api_key — keyless auth via managed identity (see litellm_settings below)
 
   # --- Open-weight (Qwen) — DEFERRED (not deployable in Australia East) ---
   # qwen3-32b: deploy layer rejects GlobalStandard + no base inference quota.
@@ -39,6 +39,10 @@ litellm_settings:
   drop_params: true
   # Metadata-only logging: DO NOT log prompt/response content.
   turn_off_message_logging: true
+  # Keyless auth to Azure OpenAI via the container's user-assigned managed identity
+  # (DefaultAzureCredential; AZURE_CLIENT_ID is injected by the Container App to
+  # select the user-assigned identity). Token scope: cognitiveservices.azure.com/.default.
+  enable_azure_ad_token_refresh: true
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

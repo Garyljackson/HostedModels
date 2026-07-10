@@ -28,8 +28,6 @@ param pgAdminLogin string = 'llmgwadmin'
 param pgAdminPassword string
 @secure()
 param litellmMasterKey string
-@secure()
-param azureAiApiKey string
 
 var suffix = uniqueString(resourceGroup().id)
 var names = {
@@ -43,6 +41,8 @@ var names = {
   acaApp: '${prefix}-litellm'
 }
 var pgFqdn = '${names.pg}.postgres.database.azure.com'
+var litellmConfig = loadTextContent('litellm-config.yaml')
+var aiOpenAiEndpoint = 'https://${names.ai}.openai.azure.com'
 
 module network 'modules/network.bicep' = {
   name: 'network'
@@ -68,7 +68,6 @@ module keyvault 'modules/keyvault.bicep' = {
     peSubnetId: network.outputs.peSubnetId
     dnsZoneId: network.outputs.dnsKvId
     litellmMasterKey: litellmMasterKey
-    azureAiApiKey: azureAiApiKey
     databaseUrl: 'postgresql://${pgAdminLogin}:${pgAdminPassword}@${pgFqdn}:5432/litellm?sslmode=require'
   }
 }
@@ -92,6 +91,7 @@ module ai 'modules/ai.bicep' = {
     location: location
     peSubnetId: network.outputs.peSubnetId
     dnsZoneId: network.outputs.dnsAiId
+    appPrincipalId: identity.outputs.principalId
   }
 }
 
@@ -106,6 +106,9 @@ module containerapp 'modules/containerapp.bicep' = {
     userAssignedIdentityId: identity.outputs.id
     keyVaultUri: keyvault.outputs.vaultUri
     image: litellmImage
+    litellmConfigContent: litellmConfig
+    aiOpenAiEndpoint: aiOpenAiEndpoint
+    appClientId: identity.outputs.clientId
   }
   dependsOn: [ postgres ]
 }

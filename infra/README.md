@@ -78,10 +78,14 @@ To reuse the *same* RG name, purge the soft-deletables afterward:
 
 ## Post-deploy / TODO (must resolve before the pilot)
 
-1. **AZURE_AI_API_KEY chicken-and-egg.** The AI Services key exists only after the
-   account is created. Either deploy in two passes (infra first, then read the key
-   and store it), or switch LiteLLM to **managed-identity** auth against AI Services
-   and drop the key. Confirm which LiteLLM supports for your Foundry route.
+1. **Auth to AI Services — managed identity (DONE, keyless).** The Bicep grants the
+   Container App's user-assigned identity the **Cognitive Services OpenAI User** role
+   on the AI Services account; the app gets `AZURE_CLIENT_ID` (selects the identity)
+   and LiteLLM uses `enable_azure_ad_token_refresh: true` (DefaultAzureCredential,
+   scope `cognitiveservices.azure.com/.default`). No AI key anywhere.
+   **Confirm at first deploy** (runtime smoke test): container logs show a token
+   acquired (no `DefaultAzureCredential failed`), and a `gpt-class` request returns
+   200 (not 401/403). If 403, broaden the role to `Cognitive Services User`.
 2. **GPT model.** `gptModelName=gpt-5.4` / `gptModelVersion=2026-03-05` are GA with
    quota in Australia East (verified via what-if 2026-07-11). Adjust capacity if needed.
 3. **Qwen (open-weight) — deferred.** Not deployable in Australia East: the deploy
@@ -89,9 +93,10 @@ To reuse the *same* RG name, purge the soft-deletables afterward:
    exists (no base inference). To enable: request base-inference quota + resolve the
    SKU (support case), then set `deployQwen=true` and uncomment the entry in
    `litellm-config.yaml`. Qwen3-Coder-Next is Marketplace/serverless (not in AU).
-4. **LiteLLM config mounting.** `containerapp.bicep` runs the stock image; wire in
-   `litellm-config.yaml` (bake a custom image, or mount a volume) and start with
-   `--config /app/config.yaml`.
+4. **LiteLLM config mounting — DONE.** `litellm-config.yaml` is embedded at deploy
+   time (`loadTextContent`) and mounted as `/app/config/config.yaml` via a Container
+   Apps Secret volume; LiteLLM starts with `--config`. The AI endpoint is injected as
+   `AZURE_API_BASE` (no hardcoded placeholder). Edit the YAML + redeploy to change routing.
 5. **Verify governance during the eval** (see `docs/EVALUATION.md` §6): backend
    resources not publicly reachable; no prompt/completion content in any sink.
 6. **Provisioning:** create per-developer virtual keys with budgets (pilot can be

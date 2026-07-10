@@ -66,9 +66,9 @@ model_list:
   - model_name: gpt-class
     litellm_params:
       model: azure/gpt-class                         # AOAI deployment (model gpt-5.4)
-      api_base: https://<resource>.openai.azure.com
-      api_key: os.environ/AZURE_API_KEY
+      api_base: os.environ/AZURE_API_BASE            # injected from AI Services endpoint
       api_version: "2024-10-21"
+      # keyless: managed identity (litellm_settings.enable_azure_ad_token_refresh)
 
   # DEFERRED — open-weight Qwen (not deployable in AU: SKU rejected + no base quota)
   # - model_name: qwen3-32b
@@ -177,7 +177,7 @@ A short onboarding README per blessed tool is a Phase 2 deliverable.
 - **Container App:** deployed into a **VNet-integrated** Container Apps environment; outbound calls to Foundry/DB/Key Vault stay on the private network.
 - **PostgreSQL:** private networking only.
 - **Key Vault + Log Analytics/Storage:** Private Endpoints.
-- **Managed identity:** the Container App uses a **managed identity to read secrets from Key Vault** (Foundry API key or Entra service-principal creds, DB connection string), minimizing static-secret sprawl (N7). (LiteLLM's documented Foundry auth is API key or Entra AD token/service principal; direct MI-to-Foundry to be confirmed at build.)
+- **Managed identity (keyless):** the Container App's **user-assigned** identity (a) reads the master key + DB URL from Key Vault, and (b) authenticates to Azure OpenAI directly via Entra — it holds the **Cognitive Services OpenAI User** role on the AI Services account, and LiteLLM mints tokens with `enable_azure_ad_token_refresh: true` (DefaultAzureCredential; `AZURE_CLIENT_ID` selects the identity). **No AI key** is stored anywhere. User-assigned (not system-assigned) so roles can be granted *before* the app exists → single-pass deploy (N7).
 - **Optional (deferred) hardening:** IP allowlist on Container Apps ingress (free); Front Door **Standard** (~$35/mo custom WAF rules) before ever considering **Premium** (~$330/mo). Not baseline (N5).
 
 ## 12. Deployment & IaC (Bicep)
@@ -217,7 +217,7 @@ A short onboarding README per blessed tool is a Phase 2 deliverable.
 
 **Remaining to confirm at build:**
 - Exact LiteLLM env-var names for Azure AI vs Azure OpenAI routes; open-weight `api_base`.
-- Whether managed-identity-direct-to-Foundry works in LiteLLM, or a service principal / API key in Key Vault is required.
+- Runtime smoke test that keyless MI auth works on Container Apps (token acquired; `gpt-class` returns 200). If 403, broaden `Cognitive Services OpenAI User` → `Cognitive Services User`.
 - Foundry quota sizing for expected concurrency (default 40 RPM Opus likely needs an increase or Enterprise agreement).
 - Confirm US data-residency posture via Microsoft's Claude data-privacy/hosting-comparison pages.
 - Immediate-offboarding revoke implementation.

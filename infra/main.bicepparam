@@ -10,4 +10,4 @@ param pgAdminLogin = 'llmgwadmin'
 //   Then:        az deployment group create -g <rg> -f main.bicep -p main.bicepparam
 param pgAdminPassword = readEnvironmentVariable('PG_ADMIN_PASSWORD')
 param litellmMasterKey = readEnvironmentVariable('LITELLM_MASTER_KEY')
-param azureAiApiKey = readEnvironmentVariable('AZURE_AI_API_KEY')
+// AI Services auth is keyless (managed identity) — no AI key param needed.

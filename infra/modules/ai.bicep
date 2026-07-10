@@ -9,6 +9,9 @@ param location string
 param peSubnetId string
 param dnsZoneId string
 
+@description('Principal ID of the app (user-assigned) identity to grant OpenAI inference access.')
+param appPrincipalId string
+
 @description('GPT-class model name to deploy (confirm availability + quota in region).')
 param gptModelName string = 'gpt-5.4'
 @description('GPT-class model version.')
@@ -47,6 +50,19 @@ resource gpt 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
   sku: { name: 'GlobalStandard', capacity: gptCapacity }
   properties: {
     model: { format: 'OpenAI', name: gptModelName, version: gptModelVersion }
+  }
+}
+
+// Cognitive Services OpenAI User — least-privilege role for calling the OpenAI
+// endpoint with Entra tokens (the app's managed identity). Scope = this account.
+var openAiUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+resource aiRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: aiSvc
+  name: guid(aiSvc.id, appPrincipalId, openAiUserRoleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUserRoleId)
+    principalId: appPrincipalId
+    principalType: 'ServicePrincipal'
   }
 }
 
