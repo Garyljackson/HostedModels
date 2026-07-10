@@ -2,8 +2,9 @@
 
 How to point your coding tool at the company LLM gateway. **5 minutes.**
 
-> PoC stage — models available now are **`gpt-class`** and **`qwen3-coder`**
-> (Qwen3-Coder-Next). Claude / Claude Code arrive in a later phase.
+> PoC stage (Australia East) — the model available now is **`gpt-class`** (Azure
+> OpenAI `gpt-5.4`). Open-weight (Qwen) and Claude / Claude Code aren't available
+> in Australia yet — see `docs/PRD.md` for the regional-availability details.
 
 ## 1. What you need from the platform admin
 
@@ -11,7 +12,7 @@ How to point your coding tool at the company LLM gateway. **5 minutes.**
 |------|---------|
 | **Gateway URL** | `https://<gateway-host>` |
 | **Your virtual key** | `sk-...` (personal — do not share; has your budget attached) |
-| **Model names** | `gpt-class`, `qwen3-coder` |
+| **Model name** | `gpt-class` |
 
 The OpenAI-compatible base URL is the gateway URL **plus `/v1`**:
 `https://<gateway-host>/v1`.
@@ -31,11 +32,6 @@ models:
     model: gpt-class
     apiBase: https://<gateway-host>/v1
     apiKey: <your-virtual-key>
-  - name: Gateway Qwen3-Coder
-    provider: openai
-    model: qwen3-coder
-    apiBase: https://<gateway-host>/v1
-    apiKey: <your-virtual-key>
 ```
 
 ### Cline (VS Code extension)
@@ -44,7 +40,7 @@ Settings → API Configuration:
 - **API Provider:** `OpenAI Compatible`
 - **Base URL:** `https://<gateway-host>/v1`
 - **API Key:** `<your-virtual-key>`
-- **Model ID:** `gpt-class` (or `qwen3-coder`)
+- **Model ID:** `gpt-class`
 
 ### OpenCode
 
@@ -60,7 +56,7 @@ OpenAI-compatible provider pointing at the gateway:
         "baseURL": "https://<gateway-host>/v1",
         "apiKey": "<your-virtual-key>"
       },
-      "models": { "gpt-class": {}, "qwen3-coder": {} }
+      "models": { "gpt-class": {} }
     }
   }
 }

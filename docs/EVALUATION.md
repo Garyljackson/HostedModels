@@ -26,7 +26,7 @@ The system under evaluation is described in `PRD.md` and `TDD.md`. This document
 
 ### In scope
 - LiteLLM gateway on Azure Container Apps (VNet-integrated), Bicep-provisioned.
-- **Models:** GPT-class (Azure OpenAI) + open-weight **Qwen3-Coder-Next** (Apache-2.0) on Foundry — standard Azure billing. **No Claude / Claude Code** (deferred to production Phase 2; Marketplace/CCU off the PoC critical path).
+- **Models:** **GPT-class only** — Azure OpenAI `gpt-5.4` in **Australia East** (standard Azure billing). Open-weight (Qwen) and Claude are **not deployable in AU** and are out of scope for this PoC (see `PRD.md` regional-availability risk).
 - **Tools:** OpenCode, Cline, Continue (OpenAI-format blessed set).
 - Private endpoints for Foundry, Postgres, Key Vault, logging; public gateway ingress with virtual-key auth.
 - Per-dev/per-team budgets, rate limits, metadata-only logging, self-service usage view.
@@ -44,8 +44,8 @@ The system under evaluation is described in `PRD.md` and `TDD.md`. This document
 | Participants | 5–8 engineers (mix of seniority; volunteers who will actually use it) |
 | Duration | 3–4 weeks of active use |
 | Tools | OpenCode, Cline, Continue (each participant picks ≥1) |
-| Models | GPT-class + Qwen3-Coder-Next (open-weight) |
-| Region | East US 2 or Sweden Central (or Data Zone US if residency is in-scope to demonstrate) |
+| Models | GPT-class (`gpt-5.4`) — single model available in AU |
+| Region | **Australia East** (in-country residency) |
 
 ## 5. Success criteria (go/no-go)
 
@@ -104,7 +104,7 @@ Document the score, evidence, and decision in a short evaluation readout.
 
 | Risk | Mitigation |
 |------|------------|
-| Claude absence skews DX judgment | Be explicit that the PoC tests the *gateway pattern* with GPT/open-weight; Claude Code DX is validated in production Phase 2. Don't let "not Claude" be read as "gateway failed." |
+| Single-model / Claude absence skews judgment | The AU PoC runs one model (`gpt-5.4`) — the only one deployable in-country. It tests the **gateway pattern + DX**, not model breadth or Claude Code. Don't read "single model / not Claude" as "gateway failed"; multi-model routing and Claude are gated by AU regional availability, not the design. |
 | Too few / unrepresentative participants | Recruit genuine daily coders across seniority; 5–8 minimum. |
 | Short timebox hides adoption drop-off | Track daily active use, not just onboarding; 3–4 weeks minimum. |
 | Cost extrapolation inaccurate | Base projection on measured per-dev tokens, note assumptions, add a margin. |

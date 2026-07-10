@@ -1,7 +1,7 @@
 using './main.bicep'
 
 param prefix = 'llmgw'
-param location = 'eastus2' // or 'swedencentral'
+param location = 'australiaeast' // closest to Brisbane; PoC data stays in-country
 param litellmImage = 'ghcr.io/berriai/litellm:main-stable'
 param pgAdminLogin = 'llmgwadmin'
 

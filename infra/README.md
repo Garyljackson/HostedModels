@@ -1,8 +1,10 @@
 # Infrastructure — LLM Gateway PoC (Bicep)
 
 Phase 0/1 infrastructure for the PoC: LiteLLM gateway on Azure Container Apps
-fronting Foundry **GPT-class + Qwen3-Coder-Next** models, governance-representative
-(private backends, public gateway ingress). **Claude is Phase 2** and not deployed here.
+fronting Foundry **GPT-class (`gpt-5.4`)** in **Australia East**, governance-representative
+(private backends, public gateway ingress). Open-weight (Qwen) is a conditional
+deployment (`deployQwen`, default off — not deployable in AU). **Claude is Phase 2**
+and not available in any AU region.
 
 > **Status: skeleton.** `bicep build` passes cleanly, but this has **not** been
 > deployed end-to-end. Validate with `what-if` and confirm the TODO items before
@@ -29,7 +31,7 @@ infra/
 
 - Azure CLI (`az`) with the Bicep extension, and permissions to create the above.
 - A resource group.
-- Decide region: **East US 2** or **Sweden Central**.
+- Region: **Australia East** (set in `main.bicepparam`). Claude Phase 2 would need East US 2 / Sweden Central.
 
 ## Deploy
 
@@ -80,11 +82,13 @@ To reuse the *same* RG name, purge the soft-deletables afterward:
    account is created. Either deploy in two passes (infra first, then read the key
    and store it), or switch LiteLLM to **managed-identity** auth against AI Services
    and drop the key. Confirm which LiteLLM supports for your Foundry route.
-2. **GPT model.** Confirm `gptModelName` / `gptModelVersion` in `modules/ai.bicep`
-   are available in the region; adjust capacity.
-3. **Qwen3-Coder-Next.** Provision the open-weight serverless endpoint (separate
-   from the CognitiveServices deployment), then set its `api_base`/key in
-   `litellm-config.yaml` under `model_name: qwen3-coder`.
+2. **GPT model.** `gptModelName=gpt-5.4` / `gptModelVersion=2026-03-05` are GA with
+   quota in Australia East (verified via what-if 2026-07-11). Adjust capacity if needed.
+3. **Qwen (open-weight) — deferred.** Not deployable in Australia East: the deploy
+   layer rejects the `GlobalStandard` SKU for `qwen3-32b` and only *finetune* quota
+   exists (no base inference). To enable: request base-inference quota + resolve the
+   SKU (support case), then set `deployQwen=true` and uncomment the entry in
+   `litellm-config.yaml`. Qwen3-Coder-Next is Marketplace/serverless (not in AU).
 4. **LiteLLM config mounting.** `containerapp.bicep` runs the stock image; wire in
    `litellm-config.yaml` (bake a custom image, or mount a volume) and start with
    `--config /app/config.yaml`.

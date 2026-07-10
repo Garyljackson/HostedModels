@@ -16,10 +16,13 @@ Foundry** models. It exposes one endpoint (OpenAI- and Anthropic-compatible) tha
 approved tools point at. Only the gateway is public; models, database, secrets,
 and logs are private (VNet + private endpoints).
 
-- **Launch (PoC):** GPT-class (Azure OpenAI) + **Qwen3-Coder-Next** (open-weight) —
+- **Launch (PoC):** **Australia East, GPT-class only** — Azure OpenAI `gpt-5.4`,
   standard Azure billing. Tools: Continue, Cline, OpenCode (OpenAI-format).
-- **Phase 2:** add Hosted-on-Azure **Claude** (`claude-opus-4-8` + `claude-haiku-4-5`
-  + `claude-sonnet-5`) via Azure Marketplace/CCU → enables **Claude Code**.
+- **Not available in AU:** open-weight (Qwen — SKU/quota) and **Claude** are absent
+  from all Australia regions; in-tenant Claude is East US 2 / Sweden Central only.
+  Adding them means leaving AU residency (a Phase-2 decision).
+- **Phase 2 (non-AU):** Hosted-on-Azure **Claude** via Azure Marketplace/CCU →
+  enables **Claude Code** — but only in a non-AU region.
 - **Dropped:** GitHub Copilot (SaaS-locked; can't route through the gateway).
 
 ## Repository layout
@@ -42,11 +45,11 @@ infra/
 ## PoC → production path
 
 1. **Phase 0 — Foundation:** deploy infra (VNet + private endpoints, Container Apps,
-   Postgres, Key Vault, Log Analytics, GPT + Qwen deployments).
-2. **Phase 1 — Gateway MVP (no Claude):** LiteLLM live, virtual keys, budgets,
+   Postgres, Key Vault, Log Analytics, GPT `gpt-5.4` deployment) in **Australia East**.
+2. **Phase 1 — Gateway MVP (GPT-only):** LiteLLM live, virtual keys, budgets,
    metadata logging, streaming; pilot 5–8 engineers on OpenAI-format tools.
-3. **Phase 2 — Add Claude + Claude Code:** Marketplace/CCU subscription, Claude
-   deployments, quota sizing. Purely additive.
+3. **Phase 2 (non-AU) — Add Claude + Claude Code:** in East US 2 / Sweden Central
+   (Claude isn't in AU), Marketplace/CCU subscription, quota sizing. Trades AU residency.
 4. **Phase 3 — Harden & scale:** IP allowlist / Front Door (optional), provisioning
    automation, capacity review.
 
@@ -68,8 +71,8 @@ az deployment group create -g <rg> -f infra/main.bicep -p infra/main.bicepparam
 ./infra/teardown.ps1 -ResourceGroup <rg>
 ```
 
-See `infra/README.md` for the must-resolve TODOs (AI-Services key bootstrap, Qwen
-serverless endpoint, config mounting) and `docs/ONBOARDING.md` to connect a tool.
+See `infra/README.md` for the must-resolve TODOs (AI-Services key bootstrap,
+config mounting) and `docs/ONBOARDING.md` to connect a tool.
 
 ## Prerequisites
 

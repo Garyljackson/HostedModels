@@ -8,7 +8,7 @@ Fill this in at the end of the pilot. Keep it to ~1–2 pages. Criteria come fro
 **Pilot window:** `<start> – <end>`
 **Participants:** `<n>` engineers (`<mix/teams>`)
 **Tools used:** `<Continue / Cline / OpenCode / ...>`
-**Models:** `gpt-class`, `qwen3-coder`
+**Models:** `gpt-class` (Australia East; single model — Qwen/Claude not available in AU)
 **Author / date:** `<name> / <date>`
 
 ## Recommendation
@@ -86,7 +86,8 @@ Verification method & findings: `<...>`
 
 ## Validity notes
 
-- This PoC tested the **gateway pattern** with GPT-class + Qwen3-Coder-Next.
-  **Claude/Claude Code were out of scope** (Phase 2). "Not Claude" ≠ "gateway
-  failed" — judge the pattern, not the absence of Claude.
+- This PoC tested the **gateway pattern** in **Australia East** with a **single
+  model** (GPT `gpt-5.4`) — the only model deployable in AU. Open-weight (Qwen)
+  and Claude/Claude Code were out of scope (not available in AU). "Single model /
+  not Claude" ≠ "gateway failed" — judge the pattern and DX, not model breadth.
 - `<other caveats: pilot size, duration, representativeness>`

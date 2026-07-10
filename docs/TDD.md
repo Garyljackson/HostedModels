@@ -11,9 +11,9 @@
 
 A self-hosted **LiteLLM** proxy (MIT core) running on **Azure Container Apps** fronts **Microsoft Foundry** model deployments. LiteLLM presents both an OpenAI-compatible and an Anthropic-compatible (`/v1/messages`) API on one endpoint. Only the gateway ingress is public (virtual-key auth); Foundry, PostgreSQL, Key Vault, and logging are private (VNet + private endpoints). Access is gated by Entra ID group membership via provisioning automation; cost/usage are controlled by per-key/per-team budgets in LiteLLM with metadata-only logging. Infrastructure is provisioned with **Bicep**.
 
-**Phasing:** Launch serves **GPT-class (Azure OpenAI) + open-weight** models (standard Azure billing) for OpenAI-format tools. **Claude (Hosted on Azure) + Claude Code are deferred to Phase 2**, which adds the Azure Marketplace/CCU subscription and Claude deployments — additive, no re-architecture (LiteLLM is model-agnostic).
+**Phasing & region:** The PoC runs in **Australia East** (residency-first) and serves **GPT-class only** (`gpt-5.4`) — the only model deployable in AU. **Open-weight (Qwen) is deferred** (not deployable in AU: deploy layer rejects the SKU + no base-inference quota). **Claude + Claude Code are deferred to Phase 2 and are not available in any AU region** (in-tenant Claude = East US 2 / Sweden Central) — enabling them means leaving AU residency. LiteLLM is model-agnostic, so adding models later is additive.
 
-## 2. Verified facts (2026-07-10)
+## 2. Verified facts (2026-07-10; AU availability & what-if 2026-07-11)
 
 | Claim | Verified outcome |
 |-------|------------------|
@@ -24,6 +24,9 @@ A self-hosted **LiteLLM** proxy (MIT core) running on **Azure Container Apps** f
 | Claude Code env vars | `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL` confirmed. Fast/background model is **`ANTHROPIC_DEFAULT_HAIKU_MODEL`** (the old `ANTHROPIC_SMALL_FAST_MODEL` is deprecated). |
 | LiteLLM license | MIT core, free self-hosted. Enterprise (paid) needed for SSO **beyond 5 users**, audit logs, RBAC, SLA. Our design uses MIT core only. |
 | IaC | **Bicep** (chosen). |
+| **AU regional availability** (live CLI, 2026-07-11) | Australia East is the **only** AU region with Foundry models (others aren't registered for the models provider). In AU: GPT deployable (`gpt-5.4`, quota 3000/150 used); **Qwen not deployable** (SKU rejected + no base-inference quota); **Claude absent from all AU regions**. |
+| GPT-class model (AU) | `gpt-5.4` (2026-03-05), GlobalStandard — GA with quota in Australia East. (`gpt-4o` deprecating; `gpt-5.5` had 0 quota.) |
+| what-if (Australia East) | Clean plan: **23 to create, 1 unsupported** — the KV role assignment, a benign what-if limitation that deploys normally. |
 
 ## 3. Architecture
 
@@ -36,7 +39,7 @@ flowchart TB
     end
 
     subgraph vnet["Private VNet — public network access disabled"]
-        foundry["Microsoft Foundry<br/>GPT-class (Azure OpenAI) — launch<br/>Qwen3-Coder-Next (open-weight) — launch<br/>Claude opus-4-8 / haiku-4-5 / sonnet-5 — Phase 2"]
+        foundry["Microsoft Foundry (Australia East)<br/>gpt-5.4 (GPT-class) — launch<br/>Qwen — deferred (not deployable in AU)<br/>Claude — Phase 2 (not available in AU)"]
         pg[("PostgreSQL Flexible Server<br/>keys · spend · budgets")]
         kv["Key Vault<br/>Foundry / DB credentials"]
         logs["Log Analytics / Storage<br/>metadata only"]
@@ -51,26 +54,28 @@ flowchart TB
 
 ## 4. Model catalog & routing
 
-**Governance rule:** use only **Hosted on Azure** Claude deployments so inference stays on Azure. The "Hosted on Anthropic infrastructure" variants run outside Azure and must **not** be used for governed traffic.
+**PoC (Australia East):** only **GPT-class** (`gpt-5.4`) is deployable in-region — the authoritative config is `infra/litellm-config.yaml`. Open-weight (Qwen) is wired into the Bicep as a **conditional** deployment (`deployQwen`, default off) but is not deployable in AU today.
 
-**Deployment type:** prefer **Data Zone Standard (US)** for `claude-opus-4-8` and `claude-sonnet-5` where US data residency is desired; otherwise **Global Standard**. Regions offering these: **East US 2** and **Sweden Central**.
+**Phase 2 (non-AU) governance rule:** if Claude is added, use only **Hosted on Azure** Claude deployments (East US 2 / Sweden Central; Data Zone Standard US for US residency) so inference stays in-tenant — never the "Hosted on Anthropic infrastructure" variants for governed traffic. This leaves Australian residency.
 
-LiteLLM maps friendly names to Foundry deployments; clients see only the friendly names (F12).
+LiteLLM maps friendly names to Foundry deployments; clients see only the friendly names (F12). Illustrative shape (authoritative config in `infra/litellm-config.yaml`):
 
 ```yaml
 model_list:
-  # === LAUNCH (Phase 1): standard Azure billing, no Marketplace/CCU ===
+  # === LAUNCH (Australia East): GPT-class only, standard Azure billing ===
   - model_name: gpt-class
     litellm_params:
-      model: azure/<azure-openai-gpt-deployment>     # Azure OpenAI
+      model: azure/gpt-class                         # AOAI deployment (model gpt-5.4)
       api_base: https://<resource>.openai.azure.com
       api_key: os.environ/AZURE_API_KEY
+      api_version: "2024-10-21"
 
-  - model_name: qwen3-coder                # Qwen3-Coder-Next (open-weight, Apache-2.0)
-    litellm_params:
-      model: azure_ai/<qwen3-coder-next-deployment>
-      api_base: https://<resource>.services.ai.azure.com/models
-      api_key: os.environ/AZURE_AI_API_KEY
+  # DEFERRED — open-weight Qwen (not deployable in AU: SKU rejected + no base quota)
+  # - model_name: qwen3-32b
+  #   litellm_params:
+  #     model: azure_ai/qwen3-32b
+  #     api_base: https://<resource>.services.ai.azure.com/models
+  #     api_key: os.environ/AZURE_AI_API_KEY
 
   # === PHASE 2 (deferred): Claude, Hosted on Azure (in-tenant) — enables Claude Code ===
   # Requires Azure Marketplace/CCU subscription before deploying.
@@ -136,7 +141,7 @@ Or via `~/.claude/settings.json` (`env` block) for a managed default. `ANTHROPIC
 ```
 Base URL: https://<gateway-host>/v1
 API key:  <developer-virtual-key>
-Model:    claude-opus-4-8 | claude-sonnet-5 | gpt-class | qwen3-coder
+Model:    gpt-class          (PoC; Qwen + Claude deferred)
 ```
 
 A short onboarding README per blessed tool is a Phase 2 deliverable.

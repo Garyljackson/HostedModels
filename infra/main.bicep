@@ -2,11 +2,12 @@
 // LLM Gateway PoC — Phase 0/1 infrastructure (governance-representative)
 // Orchestrator. Resources live in ./modules/*.bicep.
 //
-// SKELETON — validate before deploying:
+// PoC target: Australia East. what-if validated 2026-07-11 (23 create, 1 unsupported).
 //   * `bicep build main.bicep` (syntax) + `az deployment group what-if` (plan).
-//   * Confirm API versions and the GPT model name/version for your region.
-//   * Qwen3-Coder-Next (open-weight) is provisioned separately — see modules/ai.bicep.
-//   * Provisions GPT-class + open-weight only. Claude is Phase 2.
+//   * GPT model = gpt-5.4 (GA + quota in Australia East).
+//   * Open-weight (Qwen) is a CONDITIONAL deploy (deployQwen, default off) —
+//     not deployable in AU (SKU + quota). See modules/ai.bicep.
+//   * Provisions GPT-class only. Claude is Phase 2 (not available in any AU region).
 // =============================================================================
 
 targetScope = 'resourceGroup'

@@ -43,8 +43,10 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 | Area | Decision |
 |------|----------|
 | Gateway | **LiteLLM**, self-hosted on Azure Container Apps. **MIT core only — no Enterprise dependency at launch.** |
-| Models (launch) | Foundry **GPT-class (Azure OpenAI) + open-weight (Qwen3-Coder-Next, Apache-2.0)** — standard Azure billing, no Marketplace/CCU. |
-| Models (deferred phase) | Microsoft Foundry, **Hosted on Azure (GA) Claude**: `claude-opus-4-8` (main) + `claude-haiku-4-5` (fast) + `claude-sonnet-5` (mid). Requires Azure Marketplace/CCU subscription. Enables Claude Code. |
+| Region | **Australia East** (closest to Brisbane; residency-first). The only AU region with Foundry models. |
+| Models (launch) | **GPT-class only** — Azure OpenAI `gpt-5.4` in Australia East. Standard Azure billing, no Marketplace/CCU. |
+| Open-weight (deferred) | Qwen **not deployable in AU** (deploy layer rejects the SKU + no base-inference quota; Qwen3-Coder-Next is Marketplace/serverless). Needs a quota/SKU support case, or a non-AU region. |
+| Models (deferred phase) | **Claude** (`claude-opus-4-8` + `claude-haiku-4-5` + `claude-sonnet-5`) is **not available in any AU region** — in-tenant Claude is East US 2 / Sweden Central only. Enabling Claude Code means leaving AU residency (+ Marketplace/CCU). |
 | Claude Code | **Deferred** to the Claude phase (Claude Code requires Claude models). |
 | Scale | < 50 engineers. |
 | IaC | **Bicep**. |
@@ -71,7 +73,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 | F2 | Expose an **Anthropic-compatible** API (`/v1/messages`) for Claude Code. |
 | F3 | Support **streaming (SSE)** end-to-end on both API formats. |
 | F4 | Route requests to **Azure AI Foundry** model deployments by model name. |
-| F5 | Offer at least: Claude Opus 4.8, a fast Claude tier, one GPT-class model, one open-weight model. |
+| F5 | Offer multiple models via one endpoint. Target: GPT-class, open-weight, and (non-AU) Claude tiers. **AU PoC ships GPT-class (`gpt-5.4`) only** — open-weight/Claude gated by regional availability. |
 | F6 | Issue **per-developer virtual keys**; authenticate all client requests by key. |
 | F7 | Enforce **per-developer and per-team monthly budgets**; block/deny when exceeded. |
 | F8 | Enforce **per-key rate limits**. |
@@ -118,7 +120,8 @@ The gateway supports **any client that can target a custom OpenAI- or Anthropic-
 | **Metadata-only logging limits abuse/debug investigation** | Accepted trade-off for privacy. If an incident requires content, there is no retained record — mitigate with rate limits + budgets as preventive controls. |
 | **Public gateway ingress** | Protected by virtual keys + per-key rate limits; optional IP allowlist via Container Apps ingress at no extra cost. Front Door/WAF deferred due to cost (~$330/mo Premium). Revisit if exposure broadens or abuse appears. |
 | **Foundry model availability** | ✅ Verified (2026-07-10): `claude-opus-4-8`, `claude-haiku-4-5`, `claude-sonnet-5` are **Hosted on Azure (GA)** in East US 2 / Sweden Central. Use only Hosted-on-Azure variants for governed traffic; Data Zone Standard (US) for US residency. |
-| **Foundry throughput / quota** | Default PAYGO quota (e.g. Opus 40 RPM / 40k input-TPM) may bottleneck concurrent Claude Code use. Mitigate: route background to Haiku, request a quota increase, or move to an Enterprise/MCA-E agreement (2,000 RPM / 2M ITPM). |
+| **Australia regional availability (verified 2026-07-11)** | Australia East is the **only** AU region with Foundry models. In AU **only GPT is deployable** (`gpt-5.4`; quota 3000, 150 used). Qwen not deployable (SKU rejected + no base-inference quota); Claude absent from all AU regions. An AU-resident PoC is therefore **GPT-only**; the open-weight arm + Claude require a non-AU region or awaiting AU availability. |
+| **Foundry throughput / quota** | AU `gpt-5.4` quota is ample for the PoC (3000, 150 used). For Phase 2 Claude (non-AU), default PAYGO (e.g. Opus 40 RPM / 40k input-TPM) may bottleneck — route background to Haiku, request an increase, or an Enterprise/MCA-E agreement (2,000 RPM / 2M ITPM). |
 | **Billing via Azure Marketplace (CCU)** | Claude on Foundry bills in Claude Consumption Units via Azure Marketplace; requires a Marketplace subscription and subscribe permissions. Deferred to **Phase 2** — off the launch critical path (this is the reason Claude is deferred). |
 | **No Claude Code at launch** | Claude Code requires Claude models, which arrive in Phase 2. Launch tools are the OpenAI-format blessed set. Accepted trade-off for faster time-to-launch. |
 | **LiteLLM MIT/Enterprise boundary shifts** | Due-diligence item: confirm current feature split before build; design assumes MIT-core capabilities only. Admin UI SSO forgone (master-key admin access instead). |
@@ -128,8 +131,8 @@ The gateway supports **any client that can target a custom OpenAI- or Anthropic-
 
 ## 12. Phased rollout
 
-1. **Phase 0 — Foundation:** Bicep for VNet + private endpoints, Foundry resource, Container Apps env, Postgres, Key Vault, managed identity, Log Analytics. Deploy **GPT-class + open-weight** models (standard Azure billing).
-2. **Phase 1 — Gateway MVP (no Claude):** LiteLLM deployed, GPT-class + open-weight routed, virtual keys, budgets, metadata logging, streaming verified. Pilot with 3–5 engineers using **OpenAI-format tools** (OpenCode / Cline / Continue). Entra-group provisioning automation; self-service usage view.
+1. **Phase 0 — Foundation:** Bicep for VNet + private endpoints, Foundry resource, Container Apps env, Postgres, Key Vault, managed identity, Log Analytics — in **Australia East**. Deploy **GPT-class** (`gpt-5.4`, standard Azure billing).
+2. **Phase 1 — Gateway MVP (GPT-only):** LiteLLM deployed, `gpt-class` routed, virtual keys, budgets, metadata logging, streaming verified. Pilot with 3–5 engineers using **OpenAI-format tools** (OpenCode / Cline / Continue). Entra-group provisioning automation; self-service usage view. *(Open-weight deferred — not deployable in AU.)*
 3. **Phase 2 — Add Claude + Claude Code:** Provision Azure Marketplace/CCU subscription; add Hosted-on-Azure Claude deployments (`claude-opus-4-8`, `claude-haiku-4-5`, `claude-sonnet-5`); route Claude Code; size/raise Foundry quota. Purely additive — no re-architecture.
 4. **Phase 3 — Harden & scale:** Optional IP allowlist / Front Door, refine budgets, capacity review, evaluate PTUs if needed.
 
