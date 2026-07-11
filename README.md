@@ -6,8 +6,7 @@ per-developer/team cost controls, and metadata-only logging.
 
 > **Status: Proof-of-Concept / evaluation.** This repo is a validated design + a
 > deployable-skeleton for a time-boxed PoC that produces a **go / no-go** decision
-> before any production rollout. Bicep compiles clean; it has not been deployed
-> end-to-end.
+> before any production rollout. 
 
 ## What it is
 
