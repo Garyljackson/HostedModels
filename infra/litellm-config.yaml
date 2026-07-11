@@ -9,12 +9,16 @@
 
 model_list:
   # --- GPT-class via Azure OpenAI (Foundry, Australia East) ---
-  - model_name: gpt-class
+  - model_name: gpt-5.4                       # what developers put in their tool's `model` field
     litellm_params:
-      model: azure/gpt-class                 # AOAI deployment name (model gpt-5.4)
+      model: azure/gpt-5-4                    # Azure deployment name (dots not allowed in deployment names)
       api_base: os.environ/AZURE_API_BASE    # injected from the AI Services endpoint
       api_version: "2024-10-21"              # confirm current
       # No api_key — keyless auth via managed identity (see litellm_settings below)
+    model_info:
+      # gpt-5.4 is too new for LiteLLM's built-in map; tell it the family so it maps
+      # max_tokens -> max_completion_tokens (GPT-5 rejects max_tokens) and tracks cost.
+      base_model: azure/gpt-5
 
   # --- Open-weight (Qwen) — DEFERRED (not deployable in Australia East) ---
   # qwen3-32b: deploy layer rejects GlobalStandard + no base inference quota.

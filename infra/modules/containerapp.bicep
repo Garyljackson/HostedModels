@@ -16,6 +16,8 @@ param litellmConfigContent string
 param aiOpenAiEndpoint string
 @description('Client ID of the user-assigned identity (for DefaultAzureCredential / AZURE_CLIENT_ID).')
 param appClientId string
+@description('Revision suffix (a hash of the config) so config changes auto-create a new revision. Container Apps does not restart replicas on a secret-value change.')
+param revisionSuffix string
 
 // Reference the existing LAW to read its shared key locally (kept out of outputs).
 resource law 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
@@ -79,6 +81,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
     template: {
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'litellm'

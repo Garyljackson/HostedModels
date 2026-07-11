@@ -47,7 +47,7 @@ resource aiSvc 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
 
 resource gpt 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
   parent: aiSvc
-  name: 'gpt-class'
+  name: 'gpt-5-4' // deployment name = model (dots not allowed); client-facing name is gpt-5.4
   sku: { name: 'GlobalStandard', capacity: gptCapacity }
   properties: {
     model: { format: 'OpenAI', name: gptModelName, version: gptModelVersion }

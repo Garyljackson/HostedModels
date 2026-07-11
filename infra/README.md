@@ -14,13 +14,17 @@ and not available in any AU region.
 > deployment; (3) the OpenAI endpoint needs the `privatelink.openai.azure.com`
 > private DNS zone (not just `services.ai`).
 >
-> **Operational gotchas:**
-> - Changing a **Key Vault-referenced secret does not restart running replicas** —
->   force a new revision (`az containerapp update --set-env-vars ...`) to pick it up.
-> - **`gpt-5.4` rejects `max_tokens`** — it needs `max_completion_tokens`. LiteLLM's
->   `drop_params` didn't auto-map it because the deployment name (`gpt-class`) hides
->   the model family. Follow-up: add a `model_info.base_model` hint so LiteLLM maps
->   params for tools that send `max_tokens`, or clients must adapt.
+> **Operational notes:**
+> - **Config changes auto-deploy.** The container's revision suffix is a hash of
+>   `litellm-config.yaml`, so editing the config + redeploying creates a new revision.
+>   (Container Apps does **not** restart replicas on a bare secret-value change — the
+>   hash forces it.) **Master-key rotation is not hashed** — after rotating it, force a
+>   new revision manually (`az containerapp update --set-env-vars ...`).
+> - **`gpt-5.4` + `max_tokens`: resolved.** `model_info.base_model: azure/gpt-5` in the
+>   config tells LiteLLM the family, so it auto-maps `max_tokens -> max_completion_tokens`
+>   (GPT-5 rejects `max_tokens`). Verified: tools sending `max_tokens` get 200.
+> - **Model naming.** Client-facing name is `gpt-5.4` (transparent — devs know the exact
+>   model); the Azure deployment is `gpt-5-4` (dots aren't allowed in deployment names).
 
 ## Layout
 

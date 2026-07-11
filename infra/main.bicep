@@ -43,6 +43,9 @@ var names = {
 var pgFqdn = '${names.pg}.postgres.database.azure.com'
 var litellmConfig = loadTextContent('litellm-config.yaml')
 var aiOpenAiEndpoint = 'https://${names.ai}.openai.azure.com'
+// Tie the container revision to the config content so a config edit auto-creates a
+// new revision (Container Apps does not restart replicas when a secret value changes).
+var configRevisionSuffix = 'c${take(uniqueString(litellmConfig), 8)}'
 
 module network 'modules/network.bicep' = {
   name: 'network'
@@ -109,6 +112,7 @@ module containerapp 'modules/containerapp.bicep' = {
     litellmConfigContent: litellmConfig
     aiOpenAiEndpoint: aiOpenAiEndpoint
     appClientId: identity.outputs.clientId
+    revisionSuffix: configRevisionSuffix
   }
   dependsOn: [ postgres ]
 }

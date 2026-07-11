@@ -2,7 +2,7 @@
 
 How to point your coding tool at the company LLM gateway. **5 minutes.**
 
-> PoC stage (Australia East) — the model available now is **`gpt-class`** (Azure
+> PoC stage (Australia East) — the model available now is **`gpt-5.4`** (Azure
 > OpenAI `gpt-5.4`). Open-weight (Qwen) and Claude / Claude Code aren't available
 > in Australia yet — see `docs/PRD.md` for the regional-availability details.
 
@@ -12,7 +12,7 @@ How to point your coding tool at the company LLM gateway. **5 minutes.**
 |------|---------|
 | **Gateway URL** | `https://<gateway-host>` |
 | **Your virtual key** | `sk-...` (personal — do not share; has your budget attached) |
-| **Model name** | `gpt-class` |
+| **Model name** | `gpt-5.4` |
 
 The OpenAI-compatible base URL is the gateway URL **plus `/v1`**:
 `https://<gateway-host>/v1`.
@@ -29,7 +29,7 @@ Add to your Continue `config.yaml` (`~/.continue/config.yaml`):
 models:
   - name: Gateway GPT
     provider: openai
-    model: gpt-class
+    model: gpt-5.4
     apiBase: https://<gateway-host>/v1
     apiKey: <your-virtual-key>
 ```
@@ -40,7 +40,7 @@ Settings → API Configuration:
 - **API Provider:** `OpenAI Compatible`
 - **Base URL:** `https://<gateway-host>/v1`
 - **API Key:** `<your-virtual-key>`
-- **Model ID:** `gpt-class`
+- **Model ID:** `gpt-5.4`
 
 ### OpenCode
 
@@ -56,7 +56,7 @@ OpenAI-compatible provider pointing at the gateway:
         "baseURL": "https://<gateway-host>/v1",
         "apiKey": "<your-virtual-key>"
       },
-      "models": { "gpt-class": {} }
+      "models": { "gpt-5.4": {} }
     }
   }
 }
@@ -84,7 +84,7 @@ Send a prompt from your tool (streaming should feel immediate). Or curl:
 curl https://<gateway-host>/v1/chat/completions \
   -H "Authorization: Bearer <your-virtual-key>" \
   -H "Content-Type: application/json" \
-  -d '{"model":"gpt-class","messages":[{"role":"user","content":"Say hi"}],"stream":true}'
+  -d '{"model":"gpt-5.4","messages":[{"role":"user","content":"Say hi"}],"stream":true}'
 ```
 
 ## 4. See your usage & budget
