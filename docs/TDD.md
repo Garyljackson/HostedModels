@@ -148,8 +148,9 @@ A short onboarding README per blessed tool is a Phase 2 deliverable.
 
 ## 7. Authentication & key lifecycle
 
+- **How the two layers connect (important):** developers authenticate to the gateway with a **virtual key**, **not** an Entra token per request — LiteLLM (MIT core) has **no per-request Entra SSO** on the data plane. Entra governs only *who is issued a key*. There is **no built-in LiteLLM↔Entra integration**; the link is a provisioning job **we build**.
 - **Developer auth:** LiteLLM **virtual key** (Bearer). All client requests authenticate with this key.
-- **Provisioning automation:** a scheduled job reads the approved **Entra ID group** and ensures a virtual key exists per member (LiteLLM key API); revokes keys for removed members (F11). No LiteLLM Enterprise SSO required.
+- **Provisioning automation (glue we build):** a scheduled job reads the approved **Entra ID group** via the Microsoft Graph API and ensures a virtual key exists per member (LiteLLM key API); revokes keys for removed members (F11). This is our own automation, not a LiteLLM feature. No LiteLLM Enterprise SSO required.
 - **Admin access:** LiteLLM **master key** in Key Vault, held by 1–2 platform admins. (Note: LiteLLM SSO is free for ≤5 users if we later want Entra login on the admin UI — but master-key admin is the baseline, no Enterprise dependency.)
 - **Immediate offboarding:** in addition to the scheduled Entra sync, an on-demand revoke path (script/webhook) revokes a key immediately when someone leaves.
 - **Rotation:** virtual keys per developer; master key on schedule + admin offboarding; Foundry/DB creds via Key Vault.

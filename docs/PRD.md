@@ -26,7 +26,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 
 - Provide **one approved endpoint** that approved coding tools point at.
 - Keep **inference in-tenant** on Azure AI Foundry; no proprietary code/prompts sent to external provider APIs.
-- Enforce **identity-based access** tied to Entra ID group membership.
+- Enforce **identity-based access** — Entra ID group membership governs *who is issued* a gateway (virtual) key, via provisioning automation we build. Developers authenticate per request with the key, not an Entra token (LiteLLM has no per-request Entra SSO).
 - Provide **per-developer and per-team budgets**, spend attribution, and self-service usage visibility.
 - Support **model choice** (Claude, GPT-class, open-weight) through **one endpoint and API format** — developers switch models by changing the model name, not by switching tools or SDKs.
 - Operate at **low cost and low ops burden** appropriate for <50 engineers.
@@ -80,7 +80,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 | F8 | Enforce **per-key rate limits**. |
 | F9 | Track **spend and usage** per key/user/team/model; expose to admins (dashboard) and to developers (self-service view of their own usage). |
 | F10 | Log **metadata only**; never persist prompt or completion text. |
-| F11 | Provision/deprovision keys based on **Entra ID group membership** via automation. |
+| F11 | Provision/deprovision keys based on **Entra ID group membership** via an automation **we build** (reads the group via Microsoft Graph → creates/revokes keys via the LiteLLM key API). Entra governs *who is issued a key*; developers still authenticate **per request with the virtual key, not an Entra token** — there is no built-in LiteLLM↔Entra SSO on MIT core. |
 | F12 | Centralize model management at the gateway (add / route / retire models in one place). **Naming is transparent** — clients use version-pinned names (e.g. `gpt-5.4`) so developers know the exact model they're calling. New models are exposed immediately as new names; **upgrades/retirements expose the new name alongside the old with a migration window**, rather than silently swapping the model behind a stable alias. |
 
 ## 8. Non-functional requirements
