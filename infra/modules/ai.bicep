@@ -7,7 +7,8 @@
 param name string
 param location string
 param peSubnetId string
-param dnsZoneId string
+@description('Private DNS zone IDs for the AI account PE (openai, cognitiveservices, services.ai).')
+param dnsAiZoneIds array
 
 @description('Principal ID of the app (user-assigned) identity to grant OpenAI inference access.')
 param appPrincipalId string
@@ -64,6 +65,7 @@ resource aiRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalId: appPrincipalId
     principalType: 'ServicePrincipal'
   }
+  dependsOn: [ gpt ] // wait until the account is fully provisioned (avoids "state Accepted" race)
 }
 
 // Open-weight standard deployment. In eastus2 / swedencentral / australiaeast the
@@ -92,14 +94,16 @@ resource pe 'Microsoft.Network/privateEndpoints@2023-11-01' = {
       }
     ]
   }
+  dependsOn: [ gpt ] // wait until the account is fully provisioned (avoids "state Accepted" race)
 }
 resource peDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
   parent: pe
   name: 'default'
   properties: {
-    privateDnsZoneConfigs: [
-      { name: 'ai', properties: { privateDnsZoneId: dnsZoneId } }
-    ]
+    privateDnsZoneConfigs: [for (id, i) in dnsAiZoneIds: {
+      name: 'ai-${i}'
+      properties: { privateDnsZoneId: id }
+    }]
   }
 }
 

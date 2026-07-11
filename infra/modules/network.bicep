@@ -12,7 +12,16 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
     subnets: [
       {
         name: 'aca'
-        properties: { addressPrefix: '10.20.0.0/23' } // /23 required for Container Apps env
+        properties: {
+          addressPrefix: '10.20.0.0/23' // /23 required for Container Apps env
+          // Workload-profiles Container Apps environments require this delegation.
+          delegations: [
+            {
+              name: 'aca-delegation'
+              properties: { serviceName: 'Microsoft.App/environments' }
+            }
+          ]
+        }
       }
       {
         name: 'pe'
@@ -41,10 +50,18 @@ resource dnsKv 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.vaultcore.azure.net'
   location: 'global'
 }
-resource dnsAi 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.services.ai.azure.com'
+// An AI Services 'account' private endpoint resolves across multiple zones.
+// We call the OpenAI endpoint (.openai.azure.com), so that zone is REQUIRED;
+// the others are included for completeness (cognitiveservices, services.ai).
+var aiZoneNames = [
+  'privatelink.openai.azure.com'
+  'privatelink.cognitiveservices.azure.com'
+  'privatelink.services.ai.azure.com'
+]
+resource dnsAi 'Microsoft.Network/privateDnsZones@2020-06-01' = [for z in aiZoneNames: {
+  name: z
   location: 'global'
-}
+}]
 resource dnsPg 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.postgres.database.azure.com'
   location: 'global'
@@ -56,12 +73,12 @@ resource linkKv 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-0
   location: 'global'
   properties: { registrationEnabled: false, virtualNetwork: { id: vnet.id } }
 }
-resource linkAi 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  parent: dnsAi
+resource linkAi 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = [for (z, i) in aiZoneNames: {
+  parent: dnsAi[i]
   name: 'ai-link'
   location: 'global'
   properties: { registrationEnabled: false, virtualNetwork: { id: vnet.id } }
-}
+}]
 resource linkPg 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: dnsPg
   name: 'pg-link'
@@ -74,5 +91,5 @@ output acaSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnet
 output peSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet.name, 'pe')
 output pgSubnetId string = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet.name, 'postgres')
 output dnsKvId string = dnsKv.id
-output dnsAiId string = dnsAi.id
+output dnsAiZoneIds array = [for (z, i) in aiZoneNames: dnsAi[i].id]
 output dnsPgId string = dnsPg.id

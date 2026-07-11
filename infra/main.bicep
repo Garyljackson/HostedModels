@@ -90,7 +90,7 @@ module ai 'modules/ai.bicep' = {
     name: names.ai
     location: location
     peSubnetId: network.outputs.peSubnetId
-    dnsZoneId: network.outputs.dnsAiId
+    dnsAiZoneIds: network.outputs.dnsAiZoneIds
     appPrincipalId: identity.outputs.principalId
   }
 }

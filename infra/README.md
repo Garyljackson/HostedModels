@@ -6,9 +6,21 @@ fronting Foundry **GPT-class (`gpt-5.4`)** in **Australia East**, governance-rep
 deployment (`deployQwen`, default off — not deployable in AU). **Claude is Phase 2**
 and not available in any AU region.
 
-> **Status: skeleton.** `bicep build` passes cleanly, but this has **not** been
-> deployed end-to-end. Validate with `what-if` and confirm the TODO items before
-> a real deployment.
+> **Status: deployed & smoke-tested end-to-end (2026-07-11)** in `australiaeast`.
+> A `gpt-class` completion returned 200 via keyless managed identity over the
+> private path. Three bugs found only at deploy time (now fixed): (1) the ACA
+> subnet needed `Microsoft.App/environments` delegation; (2) a Cognitive Services
+> provisioning race — the PE/role assignment were serialized after the model
+> deployment; (3) the OpenAI endpoint needs the `privatelink.openai.azure.com`
+> private DNS zone (not just `services.ai`).
+>
+> **Operational gotchas:**
+> - Changing a **Key Vault-referenced secret does not restart running replicas** —
+>   force a new revision (`az containerapp update --set-env-vars ...`) to pick it up.
+> - **`gpt-5.4` rejects `max_tokens`** — it needs `max_completion_tokens`. LiteLLM's
+>   `drop_params` didn't auto-map it because the deployment name (`gpt-class`) hides
+>   the model family. Follow-up: add a `model_info.base_model` hint so LiteLLM maps
+>   params for tools that send `max_tokens`, or clients must adapt.
 
 ## Layout
 
