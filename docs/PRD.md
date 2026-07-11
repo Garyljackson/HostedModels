@@ -28,7 +28,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 - Keep **inference in-tenant** on Azure AI Foundry; no proprietary code/prompts sent to external provider APIs.
 - Enforce **identity-based access** tied to Entra ID group membership.
 - Provide **per-developer and per-team budgets**, spend attribution, and self-service usage visibility.
-- Support **model choice** (Claude, GPT-class, open-weight) behind a single interface without changing client tooling.
+- Support **model choice** (Claude, GPT-class, open-weight) through **one endpoint and API format** — developers switch models by changing the model name, not by switching tools or SDKs.
 - Operate at **low cost and low ops burden** appropriate for <50 engineers.
 
 ## 4. Non-goals
@@ -45,6 +45,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 | Gateway | **LiteLLM**, self-hosted on Azure Container Apps. **MIT core only — no Enterprise dependency at launch.** |
 | Region | **Australia East** (closest to Brisbane; residency-first). The only AU region with Foundry models. |
 | Models (launch) | **GPT-class only** — Azure OpenAI `gpt-5.4` in Australia East. Standard Azure billing, no Marketplace/CCU. |
+| Model naming | **Transparent, version-pinned** — clients use the real model name (`gpt-5.4`), not an opaque alias, so developers know exactly what they call. Upgrades add the new name alongside the old (migration window) rather than swapping silently. Trade-off: model upgrades touch client config (accepted for transparency). |
 | Open-weight (deferred) | Qwen **not deployable in AU** (deploy layer rejects the SKU + no base-inference quota; Qwen3-Coder-Next is Marketplace/serverless). Needs a quota/SKU support case, or a non-AU region. |
 | Models (deferred phase) | **Claude** (`claude-opus-4-8` + `claude-haiku-4-5` + `claude-sonnet-5`) is **not available in any AU region** — in-tenant Claude is East US 2 / Sweden Central only. Enabling Claude Code means leaving AU residency (+ Marketplace/CCU). |
 | Claude Code | **Deferred** to the Claude phase (Claude Code requires Claude models). |
@@ -80,7 +81,7 @@ Engineers want to use modern AI coding tools, but ungoverned adoption creates fo
 | F9 | Track **spend and usage** per key/user/team/model; expose to admins (dashboard) and to developers (self-service view of their own usage). |
 | F10 | Log **metadata only**; never persist prompt or completion text. |
 | F11 | Provision/deprovision keys based on **Entra ID group membership** via automation. |
-| F12 | Allow admins to add/remove/retire models without changing client configuration. |
+| F12 | Centralize model management at the gateway (add / route / retire models in one place). **Naming is transparent** — clients use version-pinned names (e.g. `gpt-5.4`) so developers know the exact model they're calling. New models are exposed immediately as new names; **upgrades/retirements expose the new name alongside the old with a migration window**, rather than silently swapping the model behind a stable alias. |
 
 ## 8. Non-functional requirements
 
