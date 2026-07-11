@@ -16,9 +16,16 @@ model_list:
       api_version: "2024-10-21"              # confirm current
       # No api_key — keyless auth via managed identity (see litellm_settings below)
     model_info:
-      # gpt-5.4 is too new for LiteLLM's built-in map; tell it the family so it maps
-      # max_tokens -> max_completion_tokens (GPT-5 rejects max_tokens) and tracks cost.
+      # gpt-5.4 is too new for LiteLLM's built-in map; base_model gives the family
+      # so LiteLLM maps max_tokens -> max_completion_tokens (GPT-5 rejects max_tokens).
       base_model: azure/gpt-5
+      # Cost in AUD so budgets/spend are real dollars, not a USD estimate.
+      # Azure gpt-5.4 base GlobalStandard: 2.50/15.00 USD per 1M x ~1.45 AUD/USD
+      # (multiplier derived from the live Azure Retail Prices API, 2026-07-11).
+      # NOTE: gpt-5.4 isn't in the retail feed yet — confirm against your EA / Cost
+      # Management and update if Azure's list price or the AUD multiplier changes.
+      input_cost_per_token: 0.000003625     # A$3.625 per 1M input tokens
+      output_cost_per_token: 0.00002175     # A$21.75 per 1M output tokens
 
   # --- Open-weight (Qwen) — DEFERRED (not deployable in Australia East) ---
   # qwen3-32b: deploy layer rejects GlobalStandard + no base inference quota.
