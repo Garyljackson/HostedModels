@@ -2,7 +2,7 @@
 
 **Status:** Draft v1
 **Owner:** garyljackson@gmail.com
-**Last updated:** 2026-07-10
+**Last updated:** 2026-07-11
 **Companions:** `PRD.md`, `TDD.md`
 
 ---

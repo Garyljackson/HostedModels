@@ -2,7 +2,7 @@
 
 **Status:** Draft v1 — **Proof-of-Concept / evaluation stage** (go/no-go before any production deployment)
 **Owner:** garyljackson@gmail.com
-**Last updated:** 2026-07-10
+**Last updated:** 2026-07-11
 **Companions:** `TDD.md` (design), `EVALUATION.md` (PoC success criteria & go/no-go)
 
 ---
@@ -120,8 +120,8 @@ The gateway supports **any client that can target a custom OpenAI- or Anthropic-
 |-----------------|--------------------|
 | **Metadata-only logging limits abuse/debug investigation** | Accepted trade-off for privacy. If an incident requires content, there is no retained record — mitigate with rate limits + budgets as preventive controls. |
 | **Public gateway ingress** | Protected by virtual keys + per-key rate limits; optional IP allowlist via Container Apps ingress at no extra cost. Front Door/WAF deferred due to cost (~$330/mo Premium). Revisit if exposure broadens or abuse appears. |
-| **Foundry model availability** | ✅ Verified (2026-07-10): `claude-opus-4-8`, `claude-haiku-4-5`, `claude-sonnet-5` are **Hosted on Azure (GA)** in East US 2 / Sweden Central. Use only Hosted-on-Azure variants for governed traffic; Data Zone Standard (US) for US residency. |
-| **Australia regional availability (verified 2026-07-11)** | Australia East is the **only** AU region with Foundry models. In AU **only GPT is deployable** (`gpt-5.4`; quota 3000, 150 used). Qwen not deployable (SKU rejected + no base-inference quota); Claude absent from all AU regions. An AU-resident PoC is therefore **GPT-only**; the open-weight arm + Claude require a non-AU region or awaiting AU availability. |
+| **Foundry model availability** | Hosted-on-Azure Claude (`claude-opus-4-8`, `claude-haiku-4-5`, `claude-sonnet-5`) is GA in **East US 2 / Sweden Central** (Data Zone Standard US for US residency). Only Hosted-on-Azure variants keep traffic in-tenant. |
+| **Australia regional availability** | Australia East is the **only** AU region with Foundry models, and in AU **only GPT is deployable** (`gpt-5.4`). Qwen isn't (SKU + no base-inference quota); Claude is absent from all AU regions. So an AU-resident deployment is **GPT-only**; open-weight and Claude require a non-AU region or await AU availability. |
 | **Foundry throughput / quota** | AU `gpt-5.4` quota is ample for the PoC (3000, 150 used). For Phase 2 Claude (non-AU), default PAYGO (e.g. Opus 40 RPM / 40k input-TPM) may bottleneck — route background to Haiku, request an increase, or an Enterprise/MCA-E agreement (2,000 RPM / 2M ITPM). |
 | **Billing via Azure Marketplace (CCU)** | Claude on Foundry bills in Claude Consumption Units via Azure Marketplace; requires a Marketplace subscription and subscribe permissions. Deferred to **Phase 2** — off the launch critical path (this is the reason Claude is deferred). |
 | **No Claude Code at launch** | Claude Code requires Claude models, which arrive in Phase 2. Launch tools are the OpenAI-format blessed set. Accepted trade-off for faster time-to-launch. |

@@ -2,7 +2,7 @@
 // LLM Gateway PoC — Phase 0/1 infrastructure (governance-representative)
 // Orchestrator. Resources live in ./modules/*.bicep.
 //
-// PoC target: Australia East. what-if validated 2026-07-11 (23 create, 1 unsupported).
+// PoC target: Australia East, GPT-only. Validate with:
 //   * `bicep build main.bicep` (syntax) + `az deployment group what-if` (plan).
 //   * GPT model = gpt-5.4 (GA + quota in Australia East).
 //   * Open-weight (Qwen) is a CONDITIONAL deploy (deployQwen, default off) —

@@ -42,7 +42,7 @@ Settings → API Configuration:
 - **API Key:** `<your-virtual-key>`
 - **Model ID:** `gpt-5.4`
 
-### OpenCode  (verified end-to-end against the gateway)
+### OpenCode
 
 **Install** — use the official **npm** package. (The WinGet `SST.opencode`
 package is community-maintained, uses a stale publisher name, and isn't in the

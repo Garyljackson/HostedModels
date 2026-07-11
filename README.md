@@ -30,7 +30,7 @@ and logs are private (VNet + private endpoints).
 ```
 docs/
   PRD.md              Product requirements + locked decisions
-  TDD.md              Technical design (verified; architecture diagram)
+  TDD.md              Technical design + architecture diagram
   EVALUATION.md       PoC plan + go/no-go success criteria
   ONBOARDING.md       Pilot participant setup guide
   READOUT-TEMPLATE.md End-of-pilot decision one-pager

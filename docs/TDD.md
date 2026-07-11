@@ -1,8 +1,8 @@
 # Technical Design Document — Internal LLM Gateway for Coding Tools
 
-**Status:** Draft v2 (verified against vendor docs 2026-07-10) — **Proof-of-Concept / evaluation stage**
+**Status:** Draft — **Proof-of-Concept / evaluation stage**
 **Owner:** garyljackson@gmail.com
-**Last updated:** 2026-07-10
+**Last updated:** 2026-07-11
 **Companions:** `PRD.md` (product), `EVALUATION.md` (PoC success criteria & go/no-go)
 
 ---
@@ -13,20 +13,16 @@ A self-hosted **LiteLLM** proxy (MIT core) running on **Azure Container Apps** f
 
 **Phasing & region:** The PoC runs in **Australia East** (residency-first) and serves **GPT-class only** (`gpt-5.4`) — the only model deployable in AU. **Open-weight (Qwen) is deferred** (not deployable in AU: deploy layer rejects the SKU + no base-inference quota). **Claude + Claude Code are deferred to Phase 2 and are not available in any AU region** (in-tenant Claude = East US 2 / Sweden Central) — enabling them means leaving AU residency. LiteLLM is model-agnostic, so adding models later is additive.
 
-## 2. Verified facts (2026-07-10; AU availability & what-if 2026-07-11)
+## 2. Platform facts & constraints
 
-| Claim | Verified outcome |
-|-------|------------------|
-| Claude on Microsoft Foundry | GA. Two hosting modes: **Hosted on Azure** (runs on Azure end-to-end) and **Hosted on Anthropic infrastructure** (runs outside Azure). |
-| Models **Hosted on Azure (GA)** | `claude-opus-4-8`, `claude-sonnet-5`, `claude-haiku-4-5`. These are the ones that satisfy the in-tenant requirement. |
-| LiteLLM → Foundry Claude | Provider prefix `azure_ai/`; `api_base` = `https://<resource>.services.ai.azure.com/anthropic` (LiteLLM auto-appends `/v1/messages`). Auth via API key or Entra AD token/service principal. |
-| LiteLLM Anthropic + OpenAI endpoints | Serves both `/v1/messages` (Anthropic) and OpenAI-compatible routes; documented Claude Code integration. |
-| Claude Code env vars | `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL` confirmed. Fast/background model is **`ANTHROPIC_DEFAULT_HAIKU_MODEL`** (the old `ANTHROPIC_SMALL_FAST_MODEL` is deprecated). |
-| LiteLLM license | MIT core, free self-hosted. Enterprise (paid) needed for SSO **beyond 5 users**, audit logs, RBAC, SLA. Our design uses MIT core only. |
-| IaC | **Bicep** (chosen). |
-| **AU regional availability** (live CLI, 2026-07-11) | Australia East is the **only** AU region with Foundry models (others aren't registered for the models provider). In AU: GPT deployable (`gpt-5.4`, quota 3000/150 used); **Qwen not deployable** (SKU rejected + no base-inference quota); **Claude absent from all AU regions**. |
-| GPT-class model (AU) | `gpt-5.4` (2026-03-05), GlobalStandard — GA with quota in Australia East. (`gpt-4o` deprecating; `gpt-5.5` had 0 quota.) |
-| what-if (Australia East) | Clean plan: **23 to create, 1 unsupported** — the KV role assignment, a benign what-if limitation that deploys normally. |
+| Area | Detail |
+|------|--------|
+| Claude on Microsoft Foundry | Two hosting modes: **Hosted on Azure** (in-tenant) and **Hosted on Anthropic infrastructure** (external). Only Hosted-on-Azure keeps inference in-tenant. Hosted-on-Azure Claude (`claude-opus-4-8`, `claude-sonnet-5`, `claude-haiku-4-5`) is in **East US 2 / Sweden Central**, not AU. |
+| AU region availability | **Australia East is the only AU region with Foundry models.** In AU, GPT is deployable (`gpt-5.4`, GlobalStandard); **Qwen is not** (deploy layer rejects the SKU + no base-inference quota); **Claude is absent from every AU region**. |
+| LiteLLM → Foundry routing | `azure/` route for Azure OpenAI (GPT); `azure_ai/` for Claude/open-weight (`api_base` `…/anthropic` or `…/models`). Auth: **managed identity (keyless)** or API key. |
+| LiteLLM endpoints | One endpoint serves both OpenAI-compatible (`/v1/chat/completions`) and Anthropic (`/v1/messages`) formats. |
+| Claude Code env vars (Phase 2) | `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, and `ANTHROPIC_DEFAULT_HAIKU_MODEL` (fast/background). |
+| LiteLLM license | **MIT core** (free, self-hosted). Enterprise is only needed for SSO beyond 5 users, audit logs, RBAC, SLA — not used here. |
 
 ## 3. Architecture
 
@@ -216,21 +212,12 @@ A short onboarding README per blessed tool is a Phase 2 deliverable.
 - Blessed-tool policy prevents hybrid-SaaS tools from exfiltrating prompts.
 - **Due diligence:** review Microsoft's "Data, privacy, and security for Claude models in Foundry" and "Compare Azure-hosted vs Anthropic-hosted" pages before sign-off.
 
-## 16. Resolved / remaining items
+## 16. Open items
 
-**Resolved by verification (2026-07-10):**
-- Foundry hosts Claude GA; use Hosted-on-Azure `claude-opus-4-8` (main) + `claude-haiku-4-5` (fast) + `claude-sonnet-5` (mid).
-- LiteLLM Foundry route = `azure_ai/…`, `api_base …/anthropic`; auth = API key or Entra service principal.
-- Claude Code fast-model var = `ANTHROPIC_DEFAULT_HAIKU_MODEL`.
-- LiteLLM MIT core sufficient; SSO free ≤5 users if ever wanted.
-- IaC = Bicep.
-
-**Remaining to confirm at build:**
-- Exact LiteLLM env-var names for Azure AI vs Azure OpenAI routes; open-weight `api_base`.
-- Runtime smoke test that keyless MI auth works on Container Apps (token acquired; `gpt-class` returns 200). If 403, broaden `Cognitive Services OpenAI User` → `Cognitive Services User`.
-- Foundry quota sizing for expected concurrency (default 40 RPM Opus likely needs an increase or Enterprise agreement).
-- Confirm US data-residency posture via Microsoft's Claude data-privacy/hosting-comparison pages.
-- Immediate-offboarding revoke implementation.
+- **Entra-group provisioning automation** — the Graph → LiteLLM key-API sync (F11) is designed but not built; pilot keys are provisioned manually.
+- **Immediate-offboarding revoke** — on-demand key revocation alongside the scheduled Entra sync.
+- **Cost reconciliation** — confirm the AUD per-token rates against Azure Cost Management once billing data lands (see `EVALUATION.md` §5.3).
+- **Phase 2 (Claude, non-AU):** Azure Marketplace/CCU subscription; quota sizing (default Foundry PAYGO limits likely need an increase or an Enterprise/MCA-E agreement); and confirming the data-residency posture against Microsoft's Claude data-privacy / hosting-comparison pages.
 
 ---
 

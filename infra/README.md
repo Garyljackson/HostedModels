@@ -6,25 +6,20 @@ fronting Foundry **GPT-class (`gpt-5.4`)** in **Australia East**, governance-rep
 deployment (`deployQwen`, default off — not deployable in AU). **Claude is Phase 2**
 and not available in any AU region.
 
-> **Status: deployed & smoke-tested end-to-end (2026-07-11)** in `australiaeast`.
-> A `gpt-class` completion returned 200 via keyless managed identity over the
-> private path. Three bugs found only at deploy time (now fixed): (1) the ACA
-> subnet needed `Microsoft.App/environments` delegation; (2) a Cognitive Services
-> provisioning race — the PE/role assignment were serialized after the model
-> deployment; (3) the OpenAI endpoint needs the `privatelink.openai.azure.com`
-> private DNS zone (not just `services.ai`).
->
-> **Operational notes:**
-> - **Config changes auto-deploy.** The container's revision suffix is a hash of
->   `litellm-config.yaml`, so editing the config + redeploying creates a new revision.
->   (Container Apps does **not** restart replicas on a bare secret-value change — the
->   hash forces it.) **Master-key rotation is not hashed** — after rotating it, force a
->   new revision manually (`az containerapp update --set-env-vars ...`).
-> - **`gpt-5.4` + `max_tokens`: resolved.** `model_info.base_model: azure/gpt-5` in the
->   config tells LiteLLM the family, so it auto-maps `max_tokens -> max_completion_tokens`
->   (GPT-5 rejects `max_tokens`). Verified: tools sending `max_tokens` get 200.
-> - **Model naming.** Client-facing name is `gpt-5.4` (transparent — devs know the exact
->   model); the Azure deployment is `gpt-5-4` (dots aren't allowed in deployment names).
+> **Status:** deployed and validated end-to-end in `australiaeast` — a `gpt-5.4`
+> completion returns 200 via keyless managed identity over the private path.
+
+**Operational notes:**
+- **Config changes auto-deploy.** The container's revision suffix is a hash of
+  `litellm-config.yaml`, so editing the config and redeploying creates a new revision.
+  (Container Apps does **not** restart replicas on a bare secret-value change — the hash
+  forces it.) **Master-key rotation is not hashed** — after rotating, force a new revision
+  manually (`az containerapp update --set-env-vars ...`).
+- **`gpt-5.4` needs `max_completion_tokens`, not `max_tokens`.** `model_info.base_model:
+  azure/gpt-5` tells LiteLLM the family so it auto-maps the parameter for tools that send
+  `max_tokens`.
+- **Model naming.** Client-facing name is `gpt-5.4` (devs see the exact model); the Azure
+  deployment is `gpt-5-4` (dots aren't allowed in deployment names).
 
 ## Layout
 
@@ -117,31 +112,24 @@ gateway to zero when idle — cold-start tradeoff; stop Postgres between session
 tear down entirely (`./teardown.ps1 -ResourceGroup <rg>`) and redeploy (~10 min) for
 ~A$0 between test sessions.
 
-## Post-deploy / TODO (must resolve before the pilot)
+## Before the pilot
 
-1. **Auth to AI Services — managed identity (DONE, keyless).** The Bicep grants the
-   Container App's user-assigned identity the **Cognitive Services OpenAI User** role
-   on the AI Services account; the app gets `AZURE_CLIENT_ID` (selects the identity)
-   and LiteLLM uses `enable_azure_ad_token_refresh: true` (DefaultAzureCredential,
-   scope `cognitiveservices.azure.com/.default`). No AI key anywhere.
-   **Confirm at first deploy** (runtime smoke test): container logs show a token
-   acquired (no `DefaultAzureCredential failed`), and a `gpt-class` request returns
-   200 (not 401/403). If 403, broaden the role to `Cognitive Services User`.
-2. **GPT model.** `gptModelName=gpt-5.4` / `gptModelVersion=2026-03-05` are GA with
-   quota in Australia East (verified via what-if 2026-07-11). Adjust capacity if needed.
-3. **Qwen (open-weight) — deferred.** Not deployable in Australia East: the deploy
-   layer rejects the `GlobalStandard` SKU for `qwen3-32b` and only *finetune* quota
-   exists (no base inference). To enable: request base-inference quota + resolve the
-   SKU (support case), then set `deployQwen=true` and uncomment the entry in
-   `litellm-config.yaml`. Qwen3-Coder-Next is Marketplace/serverless (not in AU).
-4. **LiteLLM config mounting — DONE.** `litellm-config.yaml` is embedded at deploy
-   time (`loadTextContent`) and mounted as `/app/config/config.yaml` via a Container
-   Apps Secret volume; LiteLLM starts with `--config`. The AI endpoint is injected as
-   `AZURE_API_BASE` (no hardcoded placeholder). Edit the YAML + redeploy to change routing.
-5. **Verify governance during the eval** (see `docs/EVALUATION.md` §6): backend
-   resources not publicly reachable; no prompt/completion content in any sink.
-6. **Provisioning:** create per-developer virtual keys with budgets (pilot can be
-   manual/scripted; automation is a production-Phase concern).
+1. **Smoke-test the deployment.** Confirm a `gpt-5.4` request returns 200 (keyless MI →
+   Azure OpenAI): check container logs for a token acquired (no `DefaultAzureCredential
+   failed`), then call the gateway. On a 403, broaden the identity's role from
+   `Cognitive Services OpenAI User` to `Cognitive Services User`.
+2. **Quota.** Default Foundry PAYGO limits suit a small pilot; confirm `gpt-5.4` quota
+   covers your expected concurrency and request an increase if needed.
+3. **Provision developer keys.** Per-developer virtual keys with budgets (manual or
+   scripted for the pilot; Entra-group automation is a production-phase item — F11).
+4. **Verify governance** (see `docs/EVALUATION.md` §6): backend resources not publicly
+   reachable; no prompt/completion content in any sink.
+
+**Optional — enable Qwen (open-weight):** not deployable in Australia East today (the
+deploy layer rejects the `GlobalStandard` SKU for `qwen3-32b`, and only *finetune* quota
+exists). To enable: request base-inference quota + resolve the SKU with support, set
+`deployQwen=true`, and uncomment the entry in `litellm-config.yaml`. Qwen3-Coder-Next is
+Marketplace/serverless (not in AU).
 
 ## Notes
 
