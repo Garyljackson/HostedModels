@@ -103,6 +103,15 @@ litellm_settings:
 
 > Verify exact env-var names (`AZURE_API_KEY` vs `AZURE_AI_API_KEY`) and the open-weight `api_base` shape at build; LiteLLM's Azure AI vs Azure OpenAI routes differ slightly.
 
+> **Adding a model? Set its price in AUD (required for correct budgets).** Every model's
+> `model_info` must carry `input_cost_per_token` / `output_cost_per_token` in **AUD** (see
+> `infra/litellm-config.yaml`). Without them, LiteLLM falls back to a USD estimate from its
+> built-in cost map — or **$0** for a model it doesn't recognise — so **budgets and per-key
+> spend would be wrong**. Derive the AUD rate from Azure's list price × the **~1.45 AUD/USD**
+> multiplier (or your EA price sheet), then verify with the `x-litellm-response-cost` response
+> header. For GPT-5 / reasoning models also set `base_model` so `max_tokens` is mapped to
+> `max_completion_tokens`.
+
 ## 5. Capacity & throughput (important — Phase 2 / Claude)
 
 > Applies when Claude is added in Phase 2. Launch (GPT-class/open-weight) uses standard Azure OpenAI / Foundry quotas — size those separately.

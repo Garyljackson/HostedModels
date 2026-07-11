@@ -92,6 +92,31 @@ To reuse the *same* RG name, purge the soft-deletables afterward:
 > Vaults or deny purges. If yours does, you can't purge before the retention
 > window — use unique RG *and* Key Vault names per iteration instead.
 
+## Running costs (estimate — left running idle, AUD)
+
+Rough monthly cost with the stack deployed in **Australia East** but under no real
+load. From the Azure Retail Prices API (2026-07-11); Container Apps and Log
+Analytics are estimates — confirm against Azure Cost Management.
+
+| Component | ~AUD/month |
+|-----------|-----------|
+| PostgreSQL Flexible Server B1ms + 32 GB storage | ~34 |
+| Container App (1 vCPU / 2 GiB, `minReplicas: 1`, always-on) | ~20–35 |
+| 2 × private endpoints (Key Vault, AI Services) | ~21 |
+| Private DNS zones (5) | ~4 |
+| Log Analytics | ~1–5 |
+| Key Vault | <1 |
+| `gpt-5.4` tokens | usage-based (negligible when idle) |
+| **Idle total** | **~A$80–100/month** |
+
+Dominated by Postgres, the always-on container, and the two private endpoints;
+token spend is on top and scales with pilot usage.
+
+**Cost levers:** set `minReplicas: 0` (in `modules/containerapp.bicep`) to scale the
+gateway to zero when idle — cold-start tradeoff; stop Postgres between sessions; or
+tear down entirely (`./teardown.ps1 -ResourceGroup <rg>`) and redeploy (~10 min) for
+~A$0 between test sessions.
+
 ## Post-deploy / TODO (must resolve before the pilot)
 
 1. **Auth to AI Services — managed identity (DONE, keyless).** The Bicep grants the
