@@ -1,8 +1,5 @@
-// AI Services account (private) + GPT-class deployment + private endpoint.
-// NOTE: Qwen3-Coder-Next (open-weight) is often a SERVERLESS deployment
-// (Microsoft.MachineLearningServices) rather than a CognitiveServices
-// deployment — provision it separately and wire its endpoint/key into
-// litellm-config.yaml. See TODO below.
+// AI Services account (private) + GPT deployment + role assignment + private endpoint.
+// Open-weight (Qwen) is an optional deployment gated by `deployQwen` (default off).
 
 param name string
 param location string
@@ -68,10 +65,7 @@ resource aiRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   dependsOn: [ gpt ] // wait until the account is fully provisioned (avoids "state Accepted" race)
 }
 
-// Open-weight standard deployment. In eastus2 / swedencentral / australiaeast the
-// available Qwen standard deployment is qwen3-32b (format Alibaba). Qwen3-Coder-Next
-// is Marketplace/serverless and NOT a standard deployment in these regions — it
-// would require a serverlessEndpoint resource + Marketplace subscription.
+// Optional open-weight deployment (see the `deployQwen` param for why it's off by default).
 resource qwen 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (deployQwen) {
   parent: aiSvc
   name: 'qwen3-32b'

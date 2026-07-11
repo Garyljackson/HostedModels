@@ -15,7 +15,7 @@ targetScope = 'resourceGroup'
 @description('Short prefix for resource names, e.g. "llmgw".')
 param prefix string = 'llmgw'
 
-@description('Azure region. East US 2 / Sweden Central recommended (Foundry Claude in Phase 2).')
+@description('Azure region. Australia East for this PoC (GPT-only); Claude Phase 2 requires East US 2 / Sweden Central.')
 param location string = resourceGroup().location
 
 @description('Container image for the LiteLLM proxy.')
