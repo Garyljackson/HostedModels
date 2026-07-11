@@ -42,29 +42,49 @@ Settings → API Configuration:
 - **API Key:** `<your-virtual-key>`
 - **Model ID:** `gpt-5.4`
 
-### OpenCode
+### OpenCode  (verified end-to-end against the gateway)
 
-In your OpenCode config (`opencode.json` / project config), add an
-OpenAI-compatible provider pointing at the gateway:
+**Install** — use the official **npm** package. (The WinGet `SST.opencode`
+package is community-maintained, uses a stale publisher name, and isn't in the
+official docs — avoid it. `npm`, the install script, and GitHub Releases are the
+first-party options.)
+```powershell
+npm install -g opencode-ai      # needs Node.js LTS; don't use admin PowerShell
+```
 
+**1. Store your virtual key as an env var** (keeps the secret out of the config file):
+```powershell
+setx GATEWAY_API_KEY "<your-virtual-key>"    # then open a NEW terminal
+```
+For the current session only: `$env:GATEWAY_API_KEY = "<your-virtual-key>"`.
+
+**2. Create the config** — globally at `%USERPROFILE%\.config\opencode\opencode.json`
+(applies to every project) or `opencode.json` in a project folder:
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "provider": {
     "gateway": {
       "npm": "@ai-sdk/openai-compatible",
+      "name": "Company LLM Gateway",
       "options": {
         "baseURL": "https://<gateway-host>/v1",
-        "apiKey": "<your-virtual-key>"
+        "apiKey": "{env:GATEWAY_API_KEY}"
       },
-      "models": { "gpt-5.4": {} }
+      "models": { "gpt-5.4": { "name": "GPT-5.4 (gateway)" } }
     }
-  }
+  },
+  "model": "gateway/gpt-5.4"
 }
 ```
 
-> Exact config keys vary by tool version — if a field name differs, check the
-> tool's "custom/OpenAI-compatible provider" docs. The three values are always
-> the same: **base URL + `/v1`**, **your virtual key**, **model name**.
+**3. Run** `opencode` in a code project. It defaults to `gateway/gpt-5.4`; switch
+models with `Tab` or `/models`. On first run, **skip** the built-in Anthropic/OpenAI
+sign-in — we authenticate to the gateway with the virtual key, not a vendor key.
+
+> **401?** `GATEWAY_API_KEY` isn't set in the terminal running opencode — open a
+> fresh one after `setx`. If your OpenCode version doesn't interpolate `{env:...}`,
+> put the key directly in `options.apiKey` (and don't commit that file).
 
 ### Claude Code — later phase (not yet available)
 
